@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>접속 대기 중</title>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            color: #333;
+        }
+        .container {
+            text-align: center;
+            padding: 40px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        p {
+            font-size: 1.2em;
+            line-height: 1.6;
+        }
+        .highlight {
+            font-weight: bold;
+            color: #3498db;
+            font-size: 1.5em;
+        }
+        .loader {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid #3498db;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 30px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>서비스 접속 대기 중</h1>
+    <p>현재 접속자가 많아 대기 중입니다. 잠시만 기다려주시면 자동으로 연결됩니다.</p>
+    <div class="loader"></div>
+    <p>
+        고객님은 현재 <span id="rank" class="highlight">...</span>번째 대기자입니다.
+    </p>
+    <p>
+        (전체 대기 인원: <span id="total-waiting">...</span>명)
+    </p>
+</div>
+
+<script>
+    // 2초마다 자신의 상태를 서버에 확인하는 함수
+    const checkStatus = () => {
+        // 서버의 상태 조회 API 호출
+        fetch('/api/waiting-queue/status')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('서버와 통신에 실패했습니다.');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Case 1: 입장이 승인된 경우 (ACTIVE)
+                if (data.status === 'ACTIVE') {
+                    console.log('입장이 승인되었습니다. 메인 페이지로 이동합니다.');
+                    // 타이머를 멈추고 메인 페이지로 리다이렉트
+                    clearInterval(intervalId);
+                    window.location.href = '/';
+                }
+                // Case 2: 아직 대기 중인 경우 (WAITING)
+                else if (data.status === 'WAITING') {
+                    console.log(`현재 대기 순번: ${data.rank}, 전체 대기 인원: ${data.totalWaiting}`);
+                    // 화면에 현재 순번과 전체 대기 인원 업데이트
+                    document.getElementById('rank').innerText = data.rank;
+                    document.getElementById('total-waiting').innerText = data.totalWaiting;
+                }
+            })
+            .catch(error => {
+                console.error('상태 확인 중 오류 발생:', error);
+                // 오류 발생 시 타이머 중지
+                clearInterval(intervalId);
+            });
+    };
+
+    // 페이지가 로드되면 즉시 한 번 실행하고, 그 후 2초 간격으로 반복 실행
+    checkStatus();
+    const intervalId = setInterval(checkStatus, 2000);
+
+</script>
+
+</body>
+</html>
