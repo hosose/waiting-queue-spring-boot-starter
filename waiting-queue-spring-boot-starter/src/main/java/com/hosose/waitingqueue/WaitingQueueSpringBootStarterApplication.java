@@ -1,4 +1,4 @@
-package com.hosose.waitingqueu;
+package com.hosose.waitingqueue;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
